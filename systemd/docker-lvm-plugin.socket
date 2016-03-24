@@ -1,0 +1,9 @@
+[Unit]
+Description=Docker Volume Driver for lvm volumes
+Documentation=man:docker-lvm-plugin(8)
+
+[Socket]
+ListenStream=/run/docker/plugins/lvm.sock
+
+[Install]
+WantedBy=sockets.target
