@@ -173,6 +173,10 @@ func (l *lvmDriver) Unmount(req volume.Request) volume.Response {
 	return resp(getMountpoint(l.home, req.Name))
 }
 
+var allowedConfKeys = map[string]bool{
+	"VOLUME_GROUP": true,
+}
+
 func getVolumegroupName(vgConfig string) (string, error) {
 	vgName := ""
 	inFile, err := os.Open(vgConfig)
@@ -188,7 +192,10 @@ func getVolumegroupName(vgConfig string) (string, error) {
 		if strings.HasPrefix(str, "#") {
 			continue
 		}
-		vgSlice := strings.Split(str, "=")
+		vgSlice := strings.SplitN(str, "=", 2)
+		if !allowedConfKeys[vgSlice[0]] || len(vgSlice) == 1 {
+			continue
+		}
 		vgName = vgSlice[1]
 		break
 	}
