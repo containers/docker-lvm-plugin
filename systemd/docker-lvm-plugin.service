@@ -1,0 +1,14 @@
+[Unit]
+Description=Docker Volume Driver for lvm volumes
+Documentation=man:docker-lvm-plugin(8)
+Before=docker.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/docker/docker-lvm-plugin
+ExecStart=/usr/libexec/docker/docker-lvm-plugin
+
+[Install]
+WantedBy=multi-user.target
+
+

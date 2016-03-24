@@ -1,0 +1,7 @@
+# Update volume group (vg) name in this file. A volume group name is needed 
+# to create logical volumes using docker lvm plugin. You can choose an existing
+# volume group name by listing volume groups on your system using `vgs` command 
+# OR create a new volume group using `vgcreate` command. 
+# e.g. vgcreate volume_group_one /dev/hda where /dev/hda is your partition or
+# whole disk on which physical volumes were created.
+VOLUME_GROUP=

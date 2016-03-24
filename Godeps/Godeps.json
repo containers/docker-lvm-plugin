@@ -1,0 +1,67 @@
+{
+	"ImportPath": "github.com/shishir-a412ed/docker-lvm-plugin",
+	"GoVersion": "go1.6",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Microsoft/go-winio",
+			"Rev": "c40bf24f405ab3cc8e1383542d474e813332de6d"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.8.7-37-g6f383a9",
+			"Rev": "6f383a9b2998dd6f401704269c3e6e192f6175ad"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-systemd/activation",
+			"Comment": "v4-15-ga831f36",
+			"Rev": "a831f36d09de8f095c28eeee839df52e9de5031f"
+		},
+		{
+			"ImportPath": "github.com/docker/distribution/registry/api/errcode",
+			"Comment": "v2.3.0-rc.2-110-g62d46ef",
+			"Rev": "62d46ef07d9ca38bba965564f80d71a7f10460fa"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/errors",
+			"Comment": "v1.4.1-10421-gac50a13",
+			"Rev": "ac50a138af6747a09a4910a7009bda06c9d0cfac"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/system",
+			"Comment": "v1.4.1-10421-gac50a13",
+			"Rev": "ac50a138af6747a09a4910a7009bda06c9d0cfac"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/volume",
+			"Comment": "v1.4.1-10421-gac50a13",
+			"Rev": "ac50a138af6747a09a4910a7009bda06c9d0cfac"
+		},
+		{
+			"ImportPath": "github.com/docker/go-connections/sockets",
+			"Comment": "v0.2.0",
+			"Rev": "34b5052da6b11e27f5f2e357b38b571ddddd3928"
+		},
+		{
+			"ImportPath": "github.com/docker/go-plugins-helpers/sdk",
+			"Rev": "c9f224a041e794bd398347a837c6406313ce9511"
+		},
+		{
+			"ImportPath": "github.com/docker/go-plugins-helpers/volume",
+			"Rev": "c9f224a041e794bd398347a837c6406313ce9511"
+		},
+		{
+			"ImportPath": "github.com/docker/go-units",
+			"Comment": "v0.1.0-9-g954fed0",
+			"Rev": "954fed01cc617c55d838fa2230073f2cb17386c8"
+		},
+		{
+			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
+			"Comment": "v0.0.8-101-g50a4667",
+			"Rev": "50a46670d05fca72d255382d33f1477055eb6436"
+		},
+		{
+			"ImportPath": "golang.org/x/net/proxy",
+			"Rev": "28273ec927bee3bea305f112fc28ceee575ea893"
+		}
+	]
+}
