@@ -60,8 +60,6 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 		return resp(fmt.Errorf("error creating volume"))
 	}
 
-	var err error
-
 	defer func() {
 		if err != nil {
 			removeLogicalVolume(req.Name, vgName)
