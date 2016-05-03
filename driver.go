@@ -49,30 +49,47 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 	}
 
 	cmdArgs := []string{"-n", req.Name}
-	if s, ok := req.Options["size"]; ok && s != "" {
-		cmdArgs = append(cmdArgs, "--size", s)
+	s, ok := req.Options["size"]
+	if !ok || (ok && s == "") {
+		return resp(fmt.Errorf("Please specify a size with --size"))
 	}
+	cmdArgs = append(cmdArgs, "--size", s)
 	cmdArgs = append(cmdArgs, vgName)
-
 	cmd := exec.Command("lvcreate", cmdArgs...)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return resp(fmt.Errorf("%s", string(out)))
+	if _, err := cmd.CombinedOutput(); err != nil {
+		return resp(fmt.Errorf("error creating volume"))
 	}
+
+	var err error
+
+	defer func() {
+		if err != nil {
+			removeLogicalVolume(req.Name, vgName)
+		}
+	}()
 
 	cmd = exec.Command("mkfs.xfs", fmt.Sprintf("/dev/%s/%s", vgName, req.Name))
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return resp(fmt.Errorf("%s", string(out)))
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		return resp(fmt.Errorf("error partitioning volume"))
 	}
 
 	mp := getMountpoint(l.home, req.Name)
-	if err := os.MkdirAll(mp, 0700); err != nil {
+	err = os.MkdirAll(mp, 0700)
+	if err != nil {
 		return resp(err)
 	}
+	defer func() {
+		if err != nil {
+			os.RemoveAll(mp)
+		}
+	}()
 
 	v := &vol{req.Name, mp}
 	l.volumes[v.Name] = v
 	l.count[v.Name] = 0
-	if err := saveToDisk(l.volumes, l.count); err != nil {
+	err = saveToDisk(l.volumes, l.count)
+	if err != nil {
 		return resp(err)
 	}
 	return resp(v.MountPoint)
@@ -120,9 +137,8 @@ func (l *lvmDriver) Remove(req volume.Request) volume.Response {
 		return resp(err)
 	}
 
-	cmd := exec.Command("lvremove", "--force", fmt.Sprintf("%s/%s", vgName, req.Name))
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return resp(fmt.Errorf("%s", string(out)))
+	if _, err := removeLogicalVolume(req.Name, vgName); err != nil {
+		return resp(fmt.Errorf("error removing volume"))
 	}
 
 	delete(l.count, req.Name)
@@ -133,6 +149,14 @@ func (l *lvmDriver) Remove(req volume.Request) volume.Response {
 	return resp(getMountpoint(l.home, req.Name))
 }
 
+func removeLogicalVolume(name, vgName string) ([]byte, error) {
+	cmd := exec.Command("lvremove", "--force", fmt.Sprintf("%s/%s", vgName, name))
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return out, err
+	}
+	return nil, nil
+}
+
 func (l *lvmDriver) Path(req volume.Request) volume.Response {
 	return resp(getMountpoint(l.home, req.Name))
 }
@@ -140,6 +164,7 @@ func (l *lvmDriver) Path(req volume.Request) volume.Response {
 func (l *lvmDriver) Mount(req volume.Request) volume.Response {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+
 	l.count[req.Name]++
 	vgName, err := getVolumegroupName(l.vgConfig)
 	if err != nil {
@@ -147,8 +172,8 @@ func (l *lvmDriver) Mount(req volume.Request) volume.Response {
 	}
 	if l.count[req.Name] == 1 {
 		cmd := exec.Command("mount", fmt.Sprintf("/dev/%s/%s", vgName, req.Name), getMountpoint(l.home, req.Name))
-		if out, err := cmd.CombinedOutput(); err != nil {
-			return resp(fmt.Errorf("%s", string(out)))
+		if _, err := cmd.CombinedOutput(); err != nil {
+			return resp(fmt.Errorf("error mouting volume"))
 		}
 	}
 	if err := saveToDisk(l.volumes, l.count); err != nil {
@@ -163,8 +188,8 @@ func (l *lvmDriver) Unmount(req volume.Request) volume.Response {
 	l.count[req.Name]--
 	if l.count[req.Name] == 0 {
 		cmd := exec.Command("umount", getMountpoint(l.home, req.Name))
-		if out, err := cmd.CombinedOutput(); err != nil {
-			return resp(fmt.Errorf("%s", string(out)))
+		if _, err := cmd.CombinedOutput(); err != nil {
+			return resp(fmt.Errorf("error unmounting volume"))
 		}
 	}
 	if err := saveToDisk(l.volumes, l.count); err != nil {
