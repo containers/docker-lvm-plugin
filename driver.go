@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -279,6 +281,36 @@ func loadFromDisk(l *lvmDriver) error {
 	defer jsonCount.Close()
 
 	return json.NewDecoder(jsonCount).Decode(&l.count)
+}
+
+func isThinlyProvisioned(vgName, lvName string) (bool, error) {
+	var b2 bytes.Buffer
+
+	cmd1 := exec.Command("lvdisplay", fmt.Sprintf("/dev/%s/%s", vgName, lvName))
+	cmd2 := exec.Command("grep", "LV Pool")
+
+	r, w := io.Pipe()
+	cmd1.Stdout = w
+	cmd2.Stdin = r
+	cmd2.Stdout = &b2
+
+	if err := cmd1.Start(); err != nil {
+		return false, err
+	}
+	if err := cmd2.Start(); err != nil {
+		return false, err
+	}
+	if err := cmd1.Wait(); err != nil {
+		return false, err
+	}
+	w.Close()
+	if err := cmd2.Wait(); err != nil {
+		return false, err
+	}
+	if b2.Len() != 0 {
+		return true, nil
+	}
+	return false, nil
 }
 
 func resp(r interface{}) volume.Response {
