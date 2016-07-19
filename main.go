@@ -50,7 +50,10 @@ func main() {
 		}
 	}
 
-	lvm := newDriver(lvmHome, vgConfigPath)
+	lvm, err := newDriver(lvmHome, vgConfigPath)
+	if err != nil {
+		logrus.Fatalf("Error initializing lvmDriver %v", err)
+	}
 
 	// Call loadFromDisk only if config file exists.
 	if _, err := os.Stat(lvmVolumesConfigPath); err == nil {
