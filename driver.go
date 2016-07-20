@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/syslog"
 	"os"
 	"os/exec"
 	"path"
@@ -21,6 +22,7 @@ type lvmDriver struct {
 	volumes  map[string]*vol
 	count    map[string]int
 	mu       sync.RWMutex
+	logger   *syslog.Writer
 }
 
 type vol struct {
@@ -28,13 +30,19 @@ type vol struct {
 	MountPoint string `json:"mountpoint"`
 }
 
-func newDriver(home, vgConfig string) *lvmDriver {
+func newDriver(home, vgConfig string) (*lvmDriver, error) {
+	logger, err := syslog.New(syslog.LOG_ERR, "docker-lvm-plugin")
+	if err != nil {
+		return nil, err
+	}
+
 	return &lvmDriver{
 		home:     home,
 		vgConfig: vgConfig,
 		volumes:  make(map[string]*vol),
 		count:    make(map[string]int),
-	}
+		logger:   logger,
+	}, nil
 }
 
 func (l *lvmDriver) Create(req volume.Request) volume.Response {
@@ -58,7 +66,8 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 	cmdArgs = append(cmdArgs, "--size", s)
 	cmdArgs = append(cmdArgs, vgName)
 	cmd := exec.Command("lvcreate", cmdArgs...)
-	if _, err := cmd.CombinedOutput(); err != nil {
+	if out, err := cmd.CombinedOutput(); err != nil {
+		l.logger.Err(fmt.Sprintf("Create: lvcreate error: %s output %s", err, string(out)))
 		return resp(fmt.Errorf("error creating volume"))
 	}
 
@@ -69,8 +78,9 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 	}()
 
 	cmd = exec.Command("mkfs.xfs", fmt.Sprintf("/dev/%s/%s", vgName, req.Name))
-	_, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
+		l.logger.Err(fmt.Sprintf("Create: mkfs.xfs error: %s output %s", err, string(out)))
 		return resp(fmt.Errorf("error partitioning volume"))
 	}
 
@@ -137,7 +147,8 @@ func (l *lvmDriver) Remove(req volume.Request) volume.Response {
 		return resp(err)
 	}
 
-	if _, err := removeLogicalVolume(req.Name, vgName); err != nil {
+	if out, err := removeLogicalVolume(req.Name, vgName); err != nil {
+		l.logger.Err(fmt.Sprintf("Remove: removeLogicalVolume error %s output %s", err, string(out)))
 		return resp(fmt.Errorf("error removing volume"))
 	}
 
@@ -172,7 +183,8 @@ func (l *lvmDriver) Mount(req volume.Request) volume.Response {
 	}
 	if l.count[req.Name] == 1 {
 		cmd := exec.Command("mount", fmt.Sprintf("/dev/%s/%s", vgName, req.Name), getMountpoint(l.home, req.Name))
-		if _, err := cmd.CombinedOutput(); err != nil {
+		if out, err := cmd.CombinedOutput(); err != nil {
+			l.logger.Err(fmt.Sprintf("Mount: mount error: %s output %s", err, string(out)))
 			return resp(fmt.Errorf("error mouting volume"))
 		}
 	}
@@ -188,7 +200,8 @@ func (l *lvmDriver) Unmount(req volume.Request) volume.Response {
 	l.count[req.Name]--
 	if l.count[req.Name] == 0 {
 		cmd := exec.Command("umount", getMountpoint(l.home, req.Name))
-		if _, err := cmd.CombinedOutput(); err != nil {
+		if out, err := cmd.CombinedOutput(); err != nil {
+			l.logger.Err(fmt.Sprintf("Unmount: unmount error: %s output %s", err, string(out)))
 			return resp(fmt.Errorf("error unmounting volume"))
 		}
 	}
