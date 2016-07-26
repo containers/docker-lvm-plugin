@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/docker/docker/pkg/integration"
 	"github.com/docker/go-plugins-helpers/volume"
 )
 
@@ -318,7 +319,10 @@ func isThinlyProvisioned(vgName, lvName string) (bool, error) {
 	}
 	w.Close()
 	if err := cmd2.Wait(); err != nil {
-		return false, err
+		exitCode := integration.ProcessExitCode(err)
+		if exitCode != 1 {
+			return false, err
+		}
 	}
 	if b2.Len() != 0 {
 		return true, nil
