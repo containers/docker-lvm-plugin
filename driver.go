@@ -340,3 +340,9 @@ func resp(r interface{}) volume.Response {
 		return volume.Response{Err: "bad value writing response"}
 	}
 }
+
+func (l *lvmDriver) Capabilities(req volume.Request) volume.Response {
+    var res volume.Response
+    res.Capabilities = volume.Capability{Scope: "local"}
+    return res
+}
