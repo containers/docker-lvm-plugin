@@ -173,7 +173,7 @@ func (l *lvmDriver) Path(req volume.Request) volume.Response {
 	return resp(getMountpoint(l.home, req.Name))
 }
 
-func (l *lvmDriver) Mount(req volume.Request) volume.Response {
+func (l *lvmDriver) Mount(req volume.MountRequest) volume.Response {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -195,7 +195,7 @@ func (l *lvmDriver) Mount(req volume.Request) volume.Response {
 	return resp(getMountpoint(l.home, req.Name))
 }
 
-func (l *lvmDriver) Unmount(req volume.Request) volume.Response {
+func (l *lvmDriver) Unmount(req volume.UnmountRequest) volume.Response {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.count[req.Name]--
