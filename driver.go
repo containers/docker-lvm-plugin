@@ -59,13 +59,36 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 		return resp(err)
 	}
 
-	cmdArgs := []string{"-n", req.Name}
+	cmdArgs := []string{"-n", req.Name, "--setactivationskip", "n"}
+	snap, ok := req.Options["snapshot"]
+	isSnapshot := ok && snap != ""
+	isThinSnap := false
+	if isSnapshot {
+		if isThinSnap, err = isThinlyProvisioned(vgName, snap); err != nil {
+			l.logger.Err(fmt.Sprintf("error checking if origin volume is thin, proceeding as if it is not: %s", err))
+		}
+	}
 	s, ok := req.Options["size"]
-	if !ok || (ok && s == "") {
+	hasSize := ok && s != ""
+
+	if !hasSize && !isThinSnap {
 		return resp(fmt.Errorf("Please specify a size with --size"))
 	}
-	cmdArgs = append(cmdArgs, "--size", s)
-	cmdArgs = append(cmdArgs, vgName)
+
+	if isSnapshot {
+		cmdArgs = append(cmdArgs, "--snapshot")
+		if hasSize {
+			cmdArgs = append(cmdArgs, "--size", s)
+		}
+		cmdArgs = append(cmdArgs, vgName+"/"+snap)
+	} else if thin, ok := req.Options["thinpool"]; ok && thin != "" {
+		cmdArgs = append(cmdArgs, "--virtualsize", s)
+		cmdArgs = append(cmdArgs, "--thin")
+		cmdArgs = append(cmdArgs, vgName+"/"+thin)
+	} else {
+		cmdArgs = append(cmdArgs, "--size", s)
+		cmdArgs = append(cmdArgs, vgName)
+	}
 	cmd := exec.Command("lvcreate", cmdArgs...)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		l.logger.Err(fmt.Sprintf("Create: lvcreate error: %s output %s", err, string(out)))
@@ -78,11 +101,13 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 		}
 	}()
 
-	cmd = exec.Command("mkfs.xfs", fmt.Sprintf("/dev/%s/%s", vgName, req.Name))
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		l.logger.Err(fmt.Sprintf("Create: mkfs.xfs error: %s output %s", err, string(out)))
-		return resp(fmt.Errorf("error partitioning volume"))
+	if !isSnapshot {
+		cmd = exec.Command("mkfs.xfs", fmt.Sprintf("/dev/%s/%s", vgName, req.Name))
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			l.logger.Err(fmt.Sprintf("Create: mkfs.xfs error: %s output %s", err, string(out)))
+			return resp(fmt.Errorf("error partitioning volume"))
+		}
 	}
 
 	mp := getMountpoint(l.home, req.Name)
@@ -139,12 +164,19 @@ func (l *lvmDriver) Remove(req volume.Request) volume.Response {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if err := os.RemoveAll(getMountpoint(l.home, req.Name)); err != nil {
+	vgName, err := getVolumegroupName(l.vgConfig)
+	if err != nil {
 		return resp(err)
 	}
 
-	vgName, err := getVolumegroupName(l.vgConfig)
-	if err != nil {
+	if isOrigin, err := isSnapshotOrigin(vgName, req.Name); err != nil {
+		l.logger.Err(fmt.Sprintf("isSnapshotOrigin error: %s", err))
+		return resp(fmt.Errorf("error removing volume, unable to determine if volume is a snapshot origin"))
+	} else if isOrigin {
+		return resp(fmt.Errorf("error removing volume, all snapshot destinations must be removed before removing a volume"))
+	}
+
+	if err := os.RemoveAll(getMountpoint(l.home, req.Name)); err != nil {
 		return resp(err)
 	}
 
@@ -183,7 +215,13 @@ func (l *lvmDriver) Mount(req volume.MountRequest) volume.Response {
 		return resp(err)
 	}
 	if l.count[req.Name] == 1 {
-		cmd := exec.Command("mount", fmt.Sprintf("/dev/%s/%s", vgName, req.Name), getMountpoint(l.home, req.Name))
+		mountArgs := []string{fmt.Sprintf("/dev/%s/%s", vgName, req.Name), getMountpoint(l.home, req.Name)}
+		if isSnap, err := isSnapshot(vgName, req.Name); err != nil {
+			l.logger.Err(fmt.Sprintf("error checking if volume is a snapshot, proceeding as if it is not: %s", err))
+		} else if isSnap {
+			mountArgs = append([]string{"-o", "nouuid"}, mountArgs...)
+		}
+		cmd := exec.Command("mount", mountArgs...)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			l.logger.Err(fmt.Sprintf("Mount: mount error: %s output %s", err, string(out)))
 			return resp(fmt.Errorf("error mouting volume"))
@@ -297,11 +335,11 @@ func loadFromDisk(l *lvmDriver) error {
 	return json.NewDecoder(jsonCount).Decode(&l.count)
 }
 
-func isThinlyProvisioned(vgName, lvName string) (bool, error) {
+func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
 	var b2 bytes.Buffer
 
 	cmd1 := exec.Command("lvdisplay", fmt.Sprintf("/dev/%s/%s", vgName, lvName))
-	cmd2 := exec.Command("grep", "LV Pool")
+	cmd2 := exec.Command("grep", keyword)
 
 	r, w := io.Pipe()
 	cmd1.Stdout = w
@@ -328,6 +366,20 @@ func isThinlyProvisioned(vgName, lvName string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func isThinlyProvisioned(vgName, lvName string) (bool, error) {
+	return lvdisplayGrep(vgName, lvName, "LV Pool")
+}
+
+func isSnapshot(vgName, lvName string) (bool, error) {
+	regSnap, err := lvdisplayGrep(vgName, lvName, "destination of")
+	thinSnap, err := lvdisplayGrep(vgName, lvName, "LV Thin origin")
+	return (regSnap || thinSnap), err
+}
+
+func isSnapshotOrigin(vgName, lvName string) (bool, error) {
+	return lvdisplayGrep(vgName, lvName, "source of")
 }
 
 func resp(r interface{}) volume.Response {

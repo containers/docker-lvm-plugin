@@ -40,6 +40,11 @@ Add this volume group name in the config file.
 ```bash
 /etc/docker/docker-lvm-plugin
 ```
+The docker-lvm-plugin also supports the creation of thinly-provisioned volumes. To create a thinly-provisioned volume, a user (administrator) must first create a thin pool using the `lvcreate` command.
+```bash
+lvcreate -L 1G -T volume_group_one/mythinpool
+```
+
 # OPTIONS
 **-debug**=*true*|*false*
   Enable debug logging. Default is false.
@@ -52,6 +57,14 @@ Add this volume group name in the config file.
 docker volume create -d lvm --name foobar --opt size=0.2G
 ```
 This will create a lvm volume named foobar of size 208 MB (0.2 GB).
+```bash
+docker volume create -d lvm --name thin --opt size=0.2G --opt thinpool=mythinpool
+```
+This will create a thinly-provisioned lvm volume in mythinpool.
+```bash
+docker volume create -d lvm --name foobar_snapshot --opt snapshot=foobar --opt size=100M
+```
+This will create a snapshot volume of foobar. For thin snapshots, don't specify a size.
 
 **Volume List**
 ```bash
