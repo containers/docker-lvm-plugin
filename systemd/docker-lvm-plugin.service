@@ -1,7 +1,6 @@
 [Unit]
 Description=Docker Volume Driver for lvm volumes
 Documentation=man:docker-lvm-plugin(8)
-Before=docker.service
 
 [Service]
 Type=simple
