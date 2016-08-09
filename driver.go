@@ -29,6 +29,8 @@ type lvmDriver struct {
 type vol struct {
 	Name       string `json:"name"`
 	MountPoint string `json:"mountpoint"`
+	Type       string `json:"type"`
+	Source     string `json:"source"`
 }
 
 func newDriver(home, vgConfig string) (*lvmDriver, error) {
@@ -65,7 +67,8 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 	isThinSnap := false
 	if isSnapshot {
 		if isThinSnap, err = isThinlyProvisioned(vgName, snap); err != nil {
-			l.logger.Err(fmt.Sprintf("error checking if origin volume is thin, proceeding as if it is not: %s", err))
+			l.logger.Err(fmt.Sprintf("Create: lvdisplayGrep error: %s", err))
+			return resp(fmt.Errorf("Error creating volume"))
 		}
 	}
 	s, ok := req.Options["size"]
@@ -73,6 +76,10 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 
 	if !hasSize && !isThinSnap {
 		return resp(fmt.Errorf("Please specify a size with --size"))
+	}
+
+	if hasSize && isThinSnap {
+		return resp(fmt.Errorf("Please don't specify --size for thin snapshots"))
 	}
 
 	if isSnapshot {
@@ -92,7 +99,7 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 	cmd := exec.Command("lvcreate", cmdArgs...)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		l.logger.Err(fmt.Sprintf("Create: lvcreate error: %s output %s", err, string(out)))
-		return resp(fmt.Errorf("error creating volume"))
+		return resp(fmt.Errorf("Error creating volume"))
 	}
 
 	defer func() {
@@ -106,7 +113,7 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			l.logger.Err(fmt.Sprintf("Create: mkfs.xfs error: %s output %s", err, string(out)))
-			return resp(fmt.Errorf("error partitioning volume"))
+			return resp(fmt.Errorf("Error partitioning volume"))
 		}
 	}
 
@@ -121,7 +128,11 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 		}
 	}()
 
-	v := &vol{req.Name, mp}
+	v := &vol{Name: req.Name, MountPoint: mp}
+	if isSnapshot {
+		v.Type = "Snapshot"
+		v.Source = snap
+	}
 	l.volumes[v.Name] = v
 	l.count[v.Name] = 0
 	err = saveToDisk(l.volumes, l.count)
@@ -150,7 +161,7 @@ func (l *lvmDriver) Get(req volume.Request) volume.Response {
 	defer l.mu.RUnlock()
 	v, exists := l.volumes[req.Name]
 	if !exists {
-		return resp(fmt.Errorf("no such volume"))
+		return resp(fmt.Errorf("No such volume"))
 	}
 	var res volume.Response
 	res.Volume = &volume.Volume{
@@ -169,11 +180,20 @@ func (l *lvmDriver) Remove(req volume.Request) volume.Response {
 		return resp(err)
 	}
 
-	if isOrigin, err := isSnapshotOrigin(vgName, req.Name); err != nil {
-		l.logger.Err(fmt.Sprintf("isSnapshotOrigin error: %s", err))
-		return resp(fmt.Errorf("error removing volume, unable to determine if volume is a snapshot origin"))
-	} else if isOrigin {
-		return resp(fmt.Errorf("error removing volume, all snapshot destinations must be removed before removing a volume"))
+	isOrigin := func() bool {
+		for _, vol := range l.volumes {
+			if vol.Name == req.Name {
+				continue
+			}
+			if vol.Type == "Snapshot" && vol.Source == req.Name {
+				return true
+			}
+		}
+		return false
+	}()
+
+	if isOrigin {
+		return resp(fmt.Errorf("Error removing volume, all snapshot destinations must be removed before removing the original volume"))
 	}
 
 	if err := os.RemoveAll(getMountpoint(l.home, req.Name)); err != nil {
@@ -214,11 +234,19 @@ func (l *lvmDriver) Mount(req volume.MountRequest) volume.Response {
 	if err != nil {
 		return resp(err)
 	}
+
+	isSnap := func() bool {
+		if v, ok := l.volumes[req.Name]; ok {
+			if v.Type == "Snapshot" {
+				return true
+			}
+		}
+		return false
+	}()
+
 	if l.count[req.Name] == 1 {
 		mountArgs := []string{fmt.Sprintf("/dev/%s/%s", vgName, req.Name), getMountpoint(l.home, req.Name)}
-		if isSnap, err := isSnapshot(vgName, req.Name); err != nil {
-			l.logger.Err(fmt.Sprintf("error checking if volume is a snapshot, proceeding as if it is not: %s", err))
-		} else if isSnap {
+		if isSnap {
 			mountArgs = append([]string{"-o", "nouuid"}, mountArgs...)
 		}
 		cmd := exec.Command("mount", mountArgs...)
@@ -248,6 +276,12 @@ func (l *lvmDriver) Unmount(req volume.UnmountRequest) volume.Response {
 		return resp(err)
 	}
 	return resp(getMountpoint(l.home, req.Name))
+}
+
+func (l *lvmDriver) Capabilities(req volume.Request) volume.Response {
+	var res volume.Response
+	res.Capabilities = volume.Capability{Scope: "local"}
+	return res
 }
 
 var allowedConfKeys = map[string]bool{
@@ -372,16 +406,6 @@ func isThinlyProvisioned(vgName, lvName string) (bool, error) {
 	return lvdisplayGrep(vgName, lvName, "LV Pool")
 }
 
-func isSnapshot(vgName, lvName string) (bool, error) {
-	regSnap, err := lvdisplayGrep(vgName, lvName, "destination of")
-	thinSnap, err := lvdisplayGrep(vgName, lvName, "LV Thin origin")
-	return (regSnap || thinSnap), err
-}
-
-func isSnapshotOrigin(vgName, lvName string) (bool, error) {
-	return lvdisplayGrep(vgName, lvName, "source of")
-}
-
 func resp(r interface{}) volume.Response {
 	switch t := r.(type) {
 	case error:
@@ -391,10 +415,4 @@ func resp(r interface{}) volume.Response {
 	default:
 		return volume.Response{Err: "bad value writing response"}
 	}
-}
-
-func (l *lvmDriver) Capabilities(req volume.Request) volume.Response {
-    var res volume.Response
-    res.Capabilities = volume.Capability{Scope: "local"}
-    return res
 }
