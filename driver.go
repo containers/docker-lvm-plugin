@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/pkg/integration"
+	icmd "github.com/docker/docker/pkg/integration/cmd"
 	"github.com/docker/go-plugins-helpers/volume"
 )
 
@@ -391,7 +391,7 @@ func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
 	}
 	w.Close()
 	if err := cmd2.Wait(); err != nil {
-		exitCode := integration.ProcessExitCode(err)
+		exitCode := icmd.ProcessExitCode(err)
 		if exitCode != 1 {
 			return false, err
 		}
