@@ -75,7 +75,7 @@ func (l *lvmDriver) Create(req volume.Request) volume.Response {
 	hasSize := ok && s != ""
 
 	if !hasSize && !isThinSnap {
-		return resp(fmt.Errorf("Please specify a size with --size"))
+		return resp(fmt.Errorf("Please specify a size with --opt size="))
 	}
 
 	if hasSize && isThinSnap {
