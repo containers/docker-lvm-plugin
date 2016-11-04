@@ -24,6 +24,7 @@ install:
 	install -d -m 0755 ${SYSTEMDIR}
 	install -m 644 systemd/docker-lvm-plugin.service $(SYSTEMDIR)
 	install -m 644 systemd/docker-lvm-plugin.socket $(SYSTEMDIR)
+	install -d -m 0755 ${BINDIR}
 	install -m 755 $(BINARY) $(BINDIR)
 	install -m 644 docker-lvm-plugin.8 ${MANINSTALLDIR}/man8/
 
