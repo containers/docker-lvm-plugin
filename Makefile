@@ -20,13 +20,11 @@ lvm-plugin-build: main.go driver.go
 
 .PHONY: install
 install:
-	install -m 755 etc/docker/docker-lvm-plugin $(SYSCONFDIR)
-	install -d -m 0755 ${SYSTEMDIR}
-	install -m 644 systemd/docker-lvm-plugin.service $(SYSTEMDIR)
-	install -m 644 systemd/docker-lvm-plugin.socket $(SYSTEMDIR)
-	install -d -m 0755 ${BINDIR}
-	install -m 755 $(BINARY) $(BINDIR)
-	install -m 644 docker-lvm-plugin.8 ${MANINSTALLDIR}/man8/
+	install -D -m 755 etc/docker/docker-lvm-plugin $(SYSCONFDIR)/docker-lvm-plugin
+	install -D -m 644 systemd/docker-lvm-plugin.service $(SYSTEMDIR)/docker-lvm-plugin.service
+	install -D -m 644 systemd/docker-lvm-plugin.socket $(SYSTEMDIR)/docker-lvm-plugin.socket
+	install -D -m 755 $(BINARY) $(BINDIR)/$(BINARY)
+	install -D -m 644 docker-lvm-plugin.8 ${MANINSTALLDIR}/man8/docker-lvm-plugin.8
 
 .PHONY: clean
 clean:
