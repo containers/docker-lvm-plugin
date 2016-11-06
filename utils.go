@@ -143,3 +143,29 @@ func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
 func isThinlyProvisioned(vgName, lvName string) (bool, error) {
 	return lvdisplayGrep(vgName, lvName, "LV Pool")
 }
+
+func keyFileExists(keyFile string) error {
+	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
+		return fmt.Errorf("key file does not exist: %s", keyFile)
+	}
+	return nil
+}
+
+func cryptsetupInstalled() error {
+	if _, err := exec.LookPath("cryptsetup"); err != nil {
+		return fmt.Errorf("'cryptsetup' executable not found")
+	}
+	return nil
+}
+
+func logicalDevice(vgName, lvName string) string {
+	return fmt.Sprintf("/dev/%s/%s", vgName, lvName)
+}
+
+func luksDevice(lvName string) string {
+	return fmt.Sprintf("/dev/mapper/%s", luksDeviceName(lvName))
+}
+
+func luksDeviceName(lvName string) string {
+	return fmt.Sprintf("luks-%s", lvName)
+}
