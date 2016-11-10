@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	icmd "github.com/docker/docker/pkg/integration/cmd"
+	icmd "github.com/docker/docker/pkg/system"
 	"github.com/docker/go-plugins-helpers/volume"
 )
 
