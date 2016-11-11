@@ -25,13 +25,16 @@ using command:
 ```bash
 systemctl start docker-lvm-plugin
 ``` 
+docker-lvm-plugin daemon is on-demand socket activated. Running `docker volume ls` command
+will automatically start the daemon.
+
 Since logical volumes (lv's) are based on a volume group, it is the 
 responsibility of the user (administrator) to provide a volume group name. 
 You can choose an existing volume group name by listing volume groups on 
 your system using `vgs` command OR create a new volume group using `vgcreate` 
 command. e.g.
 ```bash
-vgcreate volume_group_one /dev/hda 
+vgcreate vg1 /dev/hda 
 ```
 where /dev/hda is your partition or whole disk on which physical volumes 
 were created.
@@ -42,8 +45,11 @@ Add this volume group name in the config file.
 ```
 The docker-lvm-plugin also supports the creation of thinly-provisioned volumes. To create a thinly-provisioned volume, a user (administrator) must first create a thin pool using the `lvcreate` command.
 ```bash
-lvcreate -L 1G -T volume_group_one/mythinpool
+lvcreate -L 10G -T vg1/mythinpool
 ```
+This will create a thinpool named `mythinpool` of size 10G under volume group `vg1`.
+NOTE: thinpools are special kind of logical volumes carved out of the volume group.
+Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg1`.
 
 # OPTIONS
 **-debug**=*true*|*false*
@@ -54,17 +60,17 @@ lvcreate -L 1G -T volume_group_one/mythinpool
 # EXAMPLES
 **Volume Creation**
 ```bash
-docker volume create -d lvm --name foobar --opt size=0.2G
+docker volume create -d lvm --opt size=0.2G foobar
 ```
 This will create a lvm volume named foobar of size 208 MB (0.2 GB).
 ```bash
-docker volume create -d lvm --name thin --opt size=0.2G --opt thinpool=mythinpool
+docker volume create -d lvm --opt size=0.2G --opt thinpool=mythinpool thin_vol
 ```
-This will create a thinly-provisioned lvm volume in mythinpool.
+This will create a thinly-provisioned lvm volume named `thin_vol` in mythinpool.
 ```bash
-docker volume create -d lvm --name foobar_snapshot --opt snapshot=foobar --opt size=100M
+docker volume create -d lvm --opt snapshot=foobar --opt size=100M foobar_snapshot
 ```
-This will create a snapshot volume of foobar. For thin snapshots, don't specify a size.
+This will create a snapshot volume of `foobar` named `foobar_snapshot`. For thin snapshots, use the same command above but don't specify a size.
 
 **Volume List**
 ```bash
@@ -79,9 +85,14 @@ docker volume inspect foobar
 This will inspect foobar and return a JSON.
 [
     {
-        "Name": "foobar",
         "Driver": "lvm",
-        "Mountpoint": "/var/lib/docker-lvm-plugin/foobar123"
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker-lvm-plugin/foobar",
+        "Name": "foobar",
+        "Options": {
+            "size": "0.2G"
+        },
+        "Scope": "local"
     }
 ]
 
