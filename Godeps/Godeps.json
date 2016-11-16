@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/docker-lvm-plugin",
-	"GoVersion": "go1.6",
+	"GoVersion": "go1.7",
 	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
@@ -32,19 +32,9 @@
 			"Rev": "a48e304ff9331be6d5df352b6b47bd1395ab5dd7"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/integration",
-			"Comment": "docs-v1.12.0-rc4-2016-07-15-467-g2011320",
-			"Rev": "2011320fa9e09d1cc19e3f0840d534e7200b0401"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/random",
-			"Comment": "docs-v1.12.0-rc4-2016-07-15-467-g2011320",
-			"Rev": "2011320fa9e09d1cc19e3f0840d534e7200b0401"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/stringutils",
-			"Comment": "docs-v1.12.0-rc4-2016-07-15-467-g2011320",
-			"Rev": "2011320fa9e09d1cc19e3f0840d534e7200b0401"
+			"ImportPath": "github.com/docker/docker/pkg/system",
+			"Comment": "docs-v1.12.0-rc4-2016-07-15-3015-g44c816a",
+			"Rev": "44c816a808198a38c3445c32614d4cef5d9f2736"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/sockets",
@@ -60,13 +50,14 @@
 			"Rev": "f3a3876798ee4f63bee3e7ee8911a2c27e7710b9"
 		},
 		{
-			"ImportPath": "github.com/go-check/check",
-			"Rev": "4f90aeace3a26ad7021961c297b22c42160c7b25"
+			"ImportPath": "github.com/docker/go-units",
+			"Comment": "v0.3.1",
+			"Rev": "f2d77a61e3c169b43402a0a1e84f06daf29b8190"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
-			"Comment": "v0.1.1-251-g4eb8c2f",
-			"Rev": "4eb8c2fb1dcb10fa3bf9bd7031f3a25a8ce2fef6"
+			"Comment": "v0.1.1-579-ge0032d4",
+			"Rev": "e0032d443b2c7f1b45833ae3fa419e0710a1928f"
 		},
 		{
 			"ImportPath": "golang.org/x/net/proxy",
