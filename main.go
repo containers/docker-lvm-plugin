@@ -32,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	if *flVersion {
-		fmt.Fprint(os.Stdout, "docker lvm plugin version: 1.0\n")
+		fmt.Fprint(os.Stdout, "docker lvm plugin version: 1.0.0\n")
 		return
 	}
 
