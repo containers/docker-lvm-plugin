@@ -71,6 +71,10 @@ This will create a thinly-provisioned lvm volume named `thin_vol` in mythinpool.
 docker volume create -d lvm --opt snapshot=foobar --opt size=100M foobar_snapshot
 ```
 This will create a snapshot volume of `foobar` named `foobar_snapshot`. For thin snapshots, use the same command above but don't specify a size.
+```bash
+docker volume create -d lvm --opt size=0.2G --opt keyfile=/root/key.bin crypt_vol
+```
+This will create a LUKS encrypted lvm volume named `crypt_vol` with the contents of `/root/key.bin` as a binary passphrase. Snapshots of encrypted volumes use the same key file. The key file must be present when the volume is created, and when it is mounted to a container.
 
 **Volume List**
 ```bash
