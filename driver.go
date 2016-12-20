@@ -264,7 +264,6 @@ func (l *lvmDriver) Mount(req volume.MountRequest) volume.Response {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	l.count[req.Name]++
 	vgName, err := getVolumegroupName(l.vgConfig)
 	if err != nil {
 		return resp(err)
@@ -280,7 +279,7 @@ func (l *lvmDriver) Mount(req volume.MountRequest) volume.Response {
 		return false, ""
 	}()
 
-	if l.count[req.Name] == 1 {
+	if l.count[req.Name] == 0 {
 		device := logicalDevice(vgName, req.Name)
 
 		if keyFile != "" {
@@ -316,6 +315,7 @@ func (l *lvmDriver) Mount(req volume.MountRequest) volume.Response {
 			return resp(fmt.Errorf("Error mouting volume"))
 		}
 	}
+	l.count[req.Name]++
 	if err := saveToDisk(l.volumes, l.count); err != nil {
 		return resp(err)
 	}
@@ -325,8 +325,7 @@ func (l *lvmDriver) Mount(req volume.MountRequest) volume.Response {
 func (l *lvmDriver) Unmount(req volume.UnmountRequest) volume.Response {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.count[req.Name]--
-	if l.count[req.Name] == 0 {
+	if l.count[req.Name] == 1 {
 		cmd := exec.Command("umount", getMountpoint(l.home, req.Name))
 		if out, err := cmd.CombinedOutput(); err != nil {
 			l.logger.Err(fmt.Sprintf("Unmount: unmount error: %s output %s", err, string(out)))
@@ -343,6 +342,7 @@ func (l *lvmDriver) Unmount(req volume.UnmountRequest) volume.Response {
 			}
 		}
 	}
+	l.count[req.Name]--
 	if err := saveToDisk(l.volumes, l.count); err != nil {
 		return resp(err)
 	}
