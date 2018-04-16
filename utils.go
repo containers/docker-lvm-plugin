@@ -129,7 +129,10 @@ func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
 	}
 	w.Close()
 	if err := cmd2.Wait(); err != nil {
-		exitCode := icmd.ProcessExitCode(err)
+		exitCode, inErr := icmd.GetExitCode(err)
+		if inErr != nil {
+			return false, inErr
+		}
 		if exitCode != 1 {
 			return false, err
 		}

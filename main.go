@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	lvmPluginSocketPath  = "/run/docker/plugins/lvm.sock"
 	vgConfigPath         = "/etc/docker/docker-lvm-plugin"
 	lvmHome              = "/var/lib/docker-lvm-plugin"
 	lvmVolumesConfigPath = "/var/lib/docker-lvm-plugin/lvmVolumesConfig.json"
@@ -63,7 +62,7 @@ func main() {
 	}
 
 	h := volume.NewHandler(lvm)
-	if err := h.ServeUnix("root", lvmPluginSocketPath); err != nil {
+	if err := h.ServeUnix("lvm", 0); err != nil {
 		logrus.Fatal(err)
 	}
 }
