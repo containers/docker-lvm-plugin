@@ -351,9 +351,9 @@ func (l *lvmDriver) Unmount(req *volume.UnmountRequest) error {
 }
 
 func (l *lvmDriver) Capabilities() *volume.CapabilitiesResponse {
-	var res *volume.CapabilitiesResponse
+	var res volume.CapabilitiesResponse
 	res.Capabilities = volume.Capability{Scope: "local"}
-	return res
+	return &res
 }
 
 func luksOpen(vgName, volName, keyFile string) ([]byte, error) {
