@@ -37,7 +37,7 @@ will automatically start the daemon.
    `vgcreate` command.
    e.g.
 ```bash
-vgcreate vg1 /dev/hda
+vgcreate vg0 /dev/hda
 ```
    where /dev/hda is your partition or whole disk on which physical volumes
    were created.
@@ -51,9 +51,9 @@ vgcreate vg1 /dev/hda
 ```bash
 lvcreate -L 10G -T vg1/mythinpool
 ```
-This will create a thinpool named `mythinpool` of size 10G under volume group `vg1`.
+This will create a thinpool named `mythinpool` of size 10G under volume group `vg0`.
 NOTE: thinpools are special kind of logical volumes carved out of the volume group.
-Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg1`.
+Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg0`.
 
 ## Volume Creation
 `docker volume create` command supports the creation of regular lvm volumes, thin volumes, snapshots of regular and thin volumes.
@@ -71,6 +71,7 @@ Following options can be passed using `-o` or `--opt`
 --opt thinpool
 --opt snapshot
 --opt keyfile
+--opt vg
 ```
 Please see examples below on how to use these options.
 
@@ -78,7 +79,13 @@ Please see examples below on how to use these options.
 ```bash
 $ docker volume create -d lvm --opt size=0.2G --name foobar
 ```
-This will create a lvm volume named `foobar` of size 208 MB (0.2 GB).
+This will create a lvm volume named `foobar` of size 208 MB (0.2 GB) in the
+volume group vg0.
+```bash
+$ docker volume create -d lvm --opt size=0.2G --opt vg=vg1 --name foobar
+```
+This will create a lvm volume named `foobar` of size 208 MB (0.2 GB) in the
+volume group vg1.
 ```bash
 docker volume create -d lvm --opt size=0.2G --opt thinpool=mythinpool --name thin_vol
 ```
