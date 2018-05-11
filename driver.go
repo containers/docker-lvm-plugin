@@ -21,6 +21,7 @@ type lvmDriver struct {
 
 type vol struct {
 	Name       string `json:"name"`
+	VgName     string `json:"vgname"`
 	MountPoint string `json:"mountpoint"`
 	Type       string `json:"type"`
 	Source     string `json:"source"`
@@ -53,6 +54,9 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 	vgName, err := getVolumegroupName(l.vgConfig)
 	if err != nil {
 		return err
+	}
+	if vgNameOpt, ok := req.Options["vg"]; ok && vgNameOpt != "" {
+		vgName = vgNameOpt
 	}
 
 	keyFile, ok := req.Options["keyfile"]
@@ -167,7 +171,7 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 		}
 	}()
 
-	v := &vol{Name: req.Name, MountPoint: mp}
+	v := &vol{Name: req.Name, VgName: vgName, MountPoint: mp}
 	if isSnapshot {
 		source := l.volumes[snap]
 		v.Type = "Snapshot"
@@ -219,9 +223,9 @@ func (l *lvmDriver) Remove(req *volume.RemoveRequest) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	vgName, err := getVolumegroupName(l.vgConfig)
-	if err != nil {
-		return err
+	vol, exists := l.volumes[req.Name]
+	if !exists {
+		return nil
 	}
 
 	isOrigin := func() bool {
@@ -244,7 +248,7 @@ func (l *lvmDriver) Remove(req *volume.RemoveRequest) error {
 		return err
 	}
 
-	if out, err := removeLogicalVolume(req.Name, vgName); err != nil {
+	if out, err := removeLogicalVolume(req.Name, vol.VgName); err != nil {
 		l.logger.Err(fmt.Sprintf("Remove: removeLogicalVolume error %s output %s", err, string(out)))
 		return fmt.Errorf("error removing volume")
 	}
@@ -265,9 +269,9 @@ func (l *lvmDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, erro
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	vgName, err := getVolumegroupName(l.vgConfig)
-	if err != nil {
-		return &volume.MountResponse{}, err
+	vol, exists := l.volumes[req.Name]
+	if !exists {
+		return &volume.MountResponse{}, fmt.Errorf("Unknown volume %s", req.Name)
 	}
 
 	isSnap, keyFile := func() (bool, string) {
@@ -281,10 +285,11 @@ func (l *lvmDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, erro
 	}()
 
 	if l.count[req.Name] == 0 {
-		device := logicalDevice(vgName, req.Name)
+		device := logicalDevice(vol.VgName, req.Name)
 
 		if keyFile != "" {
-			if err := keyFileExists(keyFile); err != nil {
+			err := keyFileExists(keyFile)
+			if err != nil {
 				l.logger.Err(fmt.Sprintf("Mount: %s", err))
 				return &volume.MountResponse{}, err
 			}
@@ -292,7 +297,7 @@ func (l *lvmDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, erro
 				l.logger.Err(fmt.Sprintf("Mount: %s", err))
 				return &volume.MountResponse{}, err
 			}
-			if out, err := luksOpen(vgName, req.Name, keyFile); err != nil {
+			if out, err := luksOpen(vol.VgName, req.Name, keyFile); err != nil {
 				l.logger.Err(fmt.Sprintf("Mount: cryptsetup error: %s output %s", err, string(out)))
 				return &volume.MountResponse{}, fmt.Errorf("Error opening encrypted volume")
 			}

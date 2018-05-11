@@ -70,6 +70,7 @@ Following options can be passed using `-o` or `--opt`
 --opt thinpool
 --opt snapshot
 --opt keyfile
+--opt vg
 ``` 
 Please see examples below on how to use these options.
 
@@ -77,7 +78,13 @@ Please see examples below on how to use these options.
 ```bash
 $ docker volume create -d lvm --opt size=0.2G --name foobar
 ```
-This will create a lvm volume named `foobar` of size 208 MB (0.2 GB).
+This will create a lvm volume named `foobar` of size 208 MB (0.2 GB) in the
+default volume group.
+```bash
+$ docker volume create -d lvm --opt size=0.2G --opt vg=vg0 --name foobar
+```
+This will create a lvm volume named `foobar` of size 208 MB (0.2 GB) in the
+default volume vg0.
 ```bash
 docker volume create -d lvm --opt size=0.2G --opt thinpool=mythinpool --name thin_vol
 ```
