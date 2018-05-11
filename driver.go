@@ -223,9 +223,16 @@ func (l *lvmDriver) Remove(req *volume.RemoveRequest) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	vgName, err := getVolumegroupName(l.vgConfig)
+	if err != nil {
+		return err
+	}
 	vol, exists := l.volumes[req.Name]
 	if !exists {
 		return nil
+	}
+	if vol.VgName == "" {
+		vol.VgName = vgName
 	}
 
 	isOrigin := func() bool {
@@ -269,9 +276,16 @@ func (l *lvmDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, erro
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	vgName, err := getVolumegroupName(l.vgConfig)
+	if err != nil {
+		return &volume.MountResponse{}, err
+	}
 	vol, exists := l.volumes[req.Name]
 	if !exists {
 		return &volume.MountResponse{}, fmt.Errorf("Unknown volume %s", req.Name)
+	}
+	if vol.VgName == "" {
+		vol.VgName = vgName
 	}
 
 	isSnap, keyFile := func() (bool, string) {
