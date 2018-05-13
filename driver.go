@@ -302,8 +302,7 @@ func (l *lvmDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, erro
 		device := logicalDevice(vol.VgName, req.Name)
 
 		if keyFile != "" {
-			err := keyFileExists(keyFile)
-			if err != nil {
+			if err := keyFileExists(keyFile); err != nil {
 				l.logger.Err(fmt.Sprintf("Mount: %s", err))
 				return &volume.MountResponse{}, err
 			}
