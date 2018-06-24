@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"sync"
 
+	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/go-plugins-helpers/volume"
 )
 
@@ -327,19 +328,27 @@ func (l *lvmDriver) Unmount(req *volume.UnmountRequest) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.count[req.Name] == 1 {
-		cmd := exec.Command("umount", getMountpoint(l.home, req.Name))
-		if out, err := cmd.CombinedOutput(); err != nil {
-			l.logger.Err(fmt.Sprintf("Unmount: unmount error: %s output %s", err, string(out)))
+		mp := getMountpoint(l.home, req.Name)
+		isVolMounted, err := mount.Mounted(mp)
+		if err != nil {
+			l.logger.Err(fmt.Sprintf("Unmount: %s", err))
 			return fmt.Errorf("error unmounting volume")
 		}
-		if v, ok := l.volumes[req.Name]; ok && v.KeyFile != "" {
-			if err := cryptsetupInstalled(); err != nil {
-				l.logger.Err(fmt.Sprintf("Unmount: %s", err))
-				return err
+		if isVolMounted {
+			cmd := exec.Command("umount", mp)
+			if out, err := cmd.CombinedOutput(); err != nil {
+				l.logger.Err(fmt.Sprintf("Unmount: unmount error: %s output %s", err, string(out)))
+				return fmt.Errorf("error unmounting volume")
 			}
-			if out, err := luksClose(req.Name); err != nil {
-				l.logger.Err(fmt.Sprintf("Unmount: cryptsetup error: %s output %s", err, string(out)))
-				return fmt.Errorf("Error closing encrypted volume")
+			if v, ok := l.volumes[req.Name]; ok && v.KeyFile != "" {
+				if err := cryptsetupInstalled(); err != nil {
+					l.logger.Err(fmt.Sprintf("Unmount: %s", err))
+					return err
+				}
+				if out, err := luksClose(req.Name); err != nil {
+					l.logger.Err(fmt.Sprintf("Unmount: cryptsetup error: %s output %s", err, string(out)))
+					return fmt.Errorf("Error closing encrypted volume")
+				}
 			}
 		}
 	}
