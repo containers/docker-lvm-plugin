@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
@@ -37,6 +38,10 @@ func main() {
 
 	if *flDebug {
 		logrus.SetLevel(logrus.DebugLevel)
+	}
+
+	if _, err := exec.LookPath("mkfs.xfs"); err != nil {
+		logrus.Fatal("mkfs.xfs is not available, please install xfsprogs to continue")
 	}
 
 	if _, err := os.Stat(lvmHome); err != nil {
