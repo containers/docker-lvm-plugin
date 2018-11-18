@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"time"
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/go-plugins-helpers/volume"
@@ -208,10 +209,22 @@ func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 	if !exists {
 		return &volume.GetResponse{}, fmt.Errorf("No such volume")
 	}
+
+	vgName, err := getVolumegroupName(l.vgConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	created, err := getVolumeCreationDate(vgName, v.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	var res volume.GetResponse
 	res.Volume = &volume.Volume{
 		Name:       v.Name,
 		Mountpoint: v.MountPoint,
+		CreatedAt:  fmt.Sprintf(created.UTC().Format(time.RFC3339)),
 	}
 	return &res, nil
 }

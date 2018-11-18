@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
 	icmd "github.com/docker/docker/pkg/system"
 )
@@ -107,8 +108,9 @@ func loadFromDisk(l *lvmDriver) error {
 	return json.NewDecoder(jsonCount).Decode(&l.count)
 }
 
-func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
+func lvdisplayGrep(vgName, lvName, keyword string) (string, error) {
 	var b2 bytes.Buffer
+	var result string
 
 	cmd1 := exec.Command("lvdisplay", fmt.Sprintf("/dev/%s/%s", vgName, lvName))
 	cmd2 := exec.Command("grep", keyword)
@@ -119,33 +121,57 @@ func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
 	cmd2.Stdout = &b2
 
 	if err := cmd1.Start(); err != nil {
-		return false, err
+		return result, err
 	}
 	if err := cmd2.Start(); err != nil {
-		return false, err
+		return result, err
 	}
 	if err := cmd1.Wait(); err != nil {
-		return false, err
+		return result, err
 	}
 	w.Close()
 	if err := cmd2.Wait(); err != nil {
 		exitCode, inErr := icmd.GetExitCode(err)
 		if inErr != nil {
-			return false, inErr
+			return result, inErr
 		}
 		if exitCode != 1 {
-			return false, err
+			return result, err
 		}
 	}
-	if b2.Len() != 0 {
-		return true, nil
-	}
-	return false, nil
+
+	return b2.String(), nil
 }
 
 func isThinlyProvisioned(vgName, lvName string) (bool, error) {
-	return lvdisplayGrep(vgName, lvName, "LV Pool")
+	var result bool
+	match, err := lvdisplayGrep(vgName, lvName, "LV Pool")
+
+	if err == nil {
+		result = len(match) > 0
+	}
+
+	return result, err
 }
+
+func getVolumeCreationDate(vgName, lvName string) (time.Time, error) {
+	var result time.Time
+
+	match, err := lvdisplayGrep(vgName, lvName, "LV Creation host, time")
+
+	if err != nil {
+		return result, err
+	}
+
+	// match is in form "LV Creation host, time localhost, 2018-11-18 13:46:08 -0100"
+	tokens := strings.Split(match, ",")
+	date := strings.TrimSpace(tokens[len(tokens) - 1])
+
+	result, err = time.Parse("2006-01-02 15:04:05 -0700", date)
+
+	return result, err
+}
+
 
 func keyFileExists(keyFile string) error {
 	if _, err := os.Stat(keyFile); os.IsNotExist(err) {
