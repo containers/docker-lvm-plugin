@@ -224,7 +224,7 @@ func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 	res.Volume = &volume.Volume{
 		Name:       v.Name,
 		Mountpoint: v.MountPoint,
-		CreatedAt:  fmt.Sprintf(created.UTC().Format(time.RFC3339)),
+		CreatedAt:  fmt.Sprintf(created.Format(time.RFC3339)),
 	}
 	return &res, nil
 }
