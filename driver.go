@@ -67,7 +67,7 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 		}
 	}
 
-	cmdArgs := []string{"-n", req.Name, "--setactivationskip", "n"}
+	cmdArgs := []string{"-y", "-n", req.Name, "--setactivationskip", "n"}
 	snap, ok := req.Options["snapshot"]
 	isSnapshot := ok && snap != ""
 	isThinSnap := false
