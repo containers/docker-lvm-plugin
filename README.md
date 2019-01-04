@@ -6,7 +6,7 @@ then be bind mounted into the container using `docker run` command.
 
 ## Setup
 
-	1) git clone git@github.com:shishir-a412ed/docker-lvm-plugin.git
+	1) git clone git@github.com:projectatomic/docker-lvm-plugin.git
 	2) cd docker-lvm-plugin
 	3) make
 	4) sudo make install
