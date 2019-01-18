@@ -76,7 +76,7 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 		if hasKeyFile {
 			return fmt.Errorf("Please don't specify --opt keyfile= for snapshots")
 		}
-		if isThinSnap, err = isThinlyProvisioned(vgName, snap); err != nil {
+		if isThinSnap, _, err = isThinlyProvisioned(vgName, snap); err != nil {
 			l.logger.Err(fmt.Sprintf("Create: lvdisplayGrep error: %s", err))
 			return fmt.Errorf("Error creating volume")
 		}
@@ -215,7 +215,7 @@ func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 		return nil, err
 	}
 
-	created, err := getVolumeCreationDate(vgName, v.Name)
+	createdAt, err := getVolumeCreationDateTime(vgName, v.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 	res.Volume = &volume.Volume{
 		Name:       v.Name,
 		Mountpoint: v.MountPoint,
-		CreatedAt:  fmt.Sprintf(created.Format(time.RFC3339)),
+		CreatedAt:  fmt.Sprintf(createdAt.Format(time.RFC3339)),
 	}
 	return &res, nil
 }
