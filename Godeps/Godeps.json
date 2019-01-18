@@ -46,7 +46,7 @@
 		},
 		{
 			"ImportPath": "github.com/docker/go-plugins-helpers/volume",
-			"Rev": "61cb8e2334204460162c8bd2417cd43cb71da66f"
+			"Rev": "1e6269c305b8c75cfda1c8aa91349c38d7335814"
 		},
 		{
 			"ImportPath": "github.com/docker/go-units",
