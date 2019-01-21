@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
 	icmd "github.com/docker/docker/pkg/system"
 )
@@ -107,7 +108,7 @@ func loadFromDisk(l *lvmDriver) error {
 	return json.NewDecoder(jsonCount).Decode(&l.count)
 }
 
-func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
+func lvdisplayGrep(vgName, lvName, keyword string) (bool, string, error) {
 	var b2 bytes.Buffer
 
 	cmd1 := exec.Command("lvdisplay", fmt.Sprintf("/dev/%s/%s", vgName, lvName))
@@ -119,32 +120,45 @@ func lvdisplayGrep(vgName, lvName, keyword string) (bool, error) {
 	cmd2.Stdout = &b2
 
 	if err := cmd1.Start(); err != nil {
-		return false, err
+		return false, "", err
 	}
 	if err := cmd2.Start(); err != nil {
-		return false, err
+		return false, "", err
 	}
 	if err := cmd1.Wait(); err != nil {
-		return false, err
+		return false, "", err
 	}
 	w.Close()
 	if err := cmd2.Wait(); err != nil {
 		exitCode, inErr := icmd.GetExitCode(err)
 		if inErr != nil {
-			return false, inErr
+			return false, "", inErr
 		}
 		if exitCode != 1 {
-			return false, err
+			return false, "", err
 		}
 	}
+
 	if b2.Len() != 0 {
-		return true, nil
+		return true, b2.String(), nil
 	}
-	return false, nil
+	return false, "", nil
 }
 
-func isThinlyProvisioned(vgName, lvName string) (bool, error) {
+func isThinlyProvisioned(vgName, lvName string) (bool, string, error) {
 	return lvdisplayGrep(vgName, lvName, "LV Pool")
+}
+
+func getVolumeCreationDateTime(vgName, lvName string) (time.Time, error) {
+	_, creationDateTime, err := lvdisplayGrep(vgName, lvName, "LV Creation host")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	// creationDateTime is in the form "LV Creation host, time localhost, 2018-11-18 13:46:08 -0100"
+	tokens := strings.Split(creationDateTime, ",")
+	date := strings.TrimSpace(tokens[len(tokens)-1])
+	return time.Parse("2006-01-02 15:04:05 -0700", date)
 }
 
 func keyFileExists(keyFile string) error {

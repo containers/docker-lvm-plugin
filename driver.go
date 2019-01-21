@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"time"
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/go-plugins-helpers/volume"
@@ -75,7 +76,7 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 		if hasKeyFile {
 			return fmt.Errorf("Please don't specify --opt keyfile= for snapshots")
 		}
-		if isThinSnap, err = isThinlyProvisioned(vgName, snap); err != nil {
+		if isThinSnap, _, err = isThinlyProvisioned(vgName, snap); err != nil {
 			l.logger.Err(fmt.Sprintf("Create: lvdisplayGrep error: %s", err))
 			return fmt.Errorf("Error creating volume")
 		}
@@ -208,10 +209,22 @@ func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 	if !exists {
 		return &volume.GetResponse{}, fmt.Errorf("No such volume")
 	}
+
+	vgName, err := getVolumegroupName(l.vgConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	createdAt, err := getVolumeCreationDateTime(vgName, v.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	var res volume.GetResponse
 	res.Volume = &volume.Volume{
 		Name:       v.Name,
 		Mountpoint: v.MountPoint,
+		CreatedAt:  fmt.Sprintf(createdAt.Format(time.RFC3339)),
 	}
 	return &res, nil
 }
