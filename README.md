@@ -1,15 +1,15 @@
 # docker lvm plugin
 Docker Volume Driver for lvm volumes
 
-This plugin can be used to create lvm volumes of specified size, which can 
+This plugin can be used to create lvm volumes of specified size, which can
 then be bind mounted into the container using `docker run` command.
 
 ## Setup
 
-	1) git clone git@github.com:projectatomic/docker-lvm-plugin.git (You can also use HTTPS to clone: git clone https://github.com/projectatomic/docker-lvm-plugin.git)
-	2) cd docker-lvm-plugin
-	3) make
-	4) sudo make install
+    1) git clone git@github.com:projectatomic/docker-lvm-plugin.git (You can also use HTTPS to clone: git clone https://github.com/projectatomic/docker-lvm-plugin.git)
+    2) cd docker-lvm-plugin
+    3) make
+    4) sudo make install
 
 ## Screencast
 [![asciicast](https://asciinema.org/a/rG6Simvv8Tecd8TYyx8uu9qlP.png)](https://asciinema.org/a/rG6Simvv8Tecd8TYyx8uu9qlP)
@@ -29,19 +29,19 @@ sudo systemctl start docker-lvm-plugin
 NOTE: docker-lvm-plugin daemon is on-demand socket activated. Running `docker volume ls` command
 will automatically start the daemon.
 
-3) Since logical volumes (lv's) are based on a volume group, it is the 
+3) Since logical volumes (lv's) are based on a volume group, it is the
    responsibility of the user (administrator) to provide a volume group name.
-   You can choose an existing volume group name by listing volume groups on 
-   your system using `vgs` command OR create a new volume group using 
+   You can choose an existing volume group name by listing volume groups on
+   your system using `vgs` command OR create a new volume group using
    `vgcreate` command.
-   e.g. 
+   e.g.
 ```bash
-vgcreate vg1 /dev/hda 
+vgcreate vg1 /dev/hda
 ```
-   where /dev/hda is your partition or whole disk on which physical volumes 
+   where /dev/hda is your partition or whole disk on which physical volumes
    were created.
 
-4) Add this volume group name in the config file 
+4) Add this volume group name in the config file
 ```bash
 /etc/docker/docker-lvm-plugin
 ```
@@ -52,7 +52,7 @@ lvcreate -L 10G -T vg1/mythinpool
 ```
 This will create a thinpool named `mythinpool` of size 10G under volume group `vg1`.
 NOTE: thinpools are special kind of logical volumes carved out of the volume group.
-Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg1`. 
+Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg1`.
 
 ## Volume Creation
 `docker volume create` command supports the creation of regular lvm volumes, thin volumes, snapshots of regular and thin volumes.
@@ -62,7 +62,7 @@ Usage: docker volume create [OPTIONS]
 -d, --driver    string    Specify volume driver name (default "local")
 --label         list      Set metadata for a volume (default [])
 --name          string    Specify volume name
--o, --opt       map       Set driver specific options (default map[]) 
+-o, --opt       map       Set driver specific options (default map[])
 ```
 Following options can be passed using `-o` or `--opt`
 ```bash
@@ -70,7 +70,7 @@ Following options can be passed using `-o` or `--opt`
 --opt thinpool
 --opt snapshot
 --opt keyfile
-``` 
+```
 Please see examples below on how to use these options.
 
 ## Examples
