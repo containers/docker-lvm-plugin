@@ -2,17 +2,13 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"time"
-
-	icmd "github.com/docker/docker/pkg/system"
 )
 
 var allowedConfKeys = map[string]bool{
@@ -109,39 +105,23 @@ func loadFromDisk(l *lvmDriver) error {
 }
 
 func lvdisplayGrep(vgName, lvName, keyword string) (bool, string, error) {
-	var b2 bytes.Buffer
-
-	cmd1 := exec.Command("lvdisplay", fmt.Sprintf("/dev/%s/%s", vgName, lvName))
-	cmd2 := exec.Command("grep", keyword)
-
-	r, w := io.Pipe()
-	cmd1.Stdout = w
-	cmd2.Stdin = r
-	cmd2.Stdout = &b2
-
-	if err := cmd1.Start(); err != nil {
+	outByttes, err := exec.Command("lvdisplay", fmt.Sprintf("/dev/%s/%s", vgName, lvName)).Output()
+	if err != nil {
 		return false, "", err
 	}
-	if err := cmd2.Start(); err != nil {
-		return false, "", err
-	}
-	if err := cmd1.Wait(); err != nil {
-		return false, "", err
-	}
-	w.Close()
-	if err := cmd2.Wait(); err != nil {
-		exitCode, inErr := icmd.GetExitCode(err)
-		if inErr != nil {
-			return false, "", inErr
-		}
-		if exitCode != 1 {
-			return false, "", err
+	var result []string
+	outStr := strings.TrimSpace(string(outByttes[:]))
+
+	for _, line := range strings.Split(outStr, "\n") {
+		if strings.Contains(line, keyword) {
+			result = append(result, line)
 		}
 	}
 
-	if b2.Len() != 0 {
-		return true, b2.String(), nil
+	if len(result) > 0 {
+		return true, strings.Join(result, "\n"), nil
 	}
+
 	return false, "", nil
 }
 
