@@ -8,8 +8,9 @@ then be bind mounted into the container using `docker run` command.
 
     1) git clone git@github.com:projectatomic/docker-lvm-plugin.git (You can also use HTTPS to clone: git clone https://github.com/projectatomic/docker-lvm-plugin.git)
     2) cd docker-lvm-plugin
-    3) make
-    4) sudo make install
+    3) export GO111MODULE=on
+    4) make
+    5) sudo make install
 
 ## Screencast
 [![asciicast](https://asciinema.org/a/rG6Simvv8Tecd8TYyx8uu9qlP.png)](https://asciinema.org/a/rG6Simvv8Tecd8TYyx8uu9qlP)
