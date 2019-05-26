@@ -11,9 +11,6 @@ then be bind mounted into the container using `docker run` command.
     3) make
     4) sudo make install
 
-## Screencast
-[![asciicast](https://asciinema.org/a/rG6Simvv8Tecd8TYyx8uu9qlP.png)](https://asciinema.org/a/rG6Simvv8Tecd8TYyx8uu9qlP)
-
 ## Usage
 
 1) Start the docker daemon before starting the docker-lvm-plugin daemon.
