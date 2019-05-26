@@ -12,6 +12,9 @@ then be bind mounted into the container using `docker run` command.
     4) make
     5) sudo make install
 
+## Screencast
+[![asciicast](https://asciinema.org/a/248482.svg)](https://asciinema.org/a/248482)
+
 ## Usage
 
 1) Start the docker daemon before starting the docker-lvm-plugin daemon.
