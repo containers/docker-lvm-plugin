@@ -220,17 +220,22 @@ func (l *lvmDriver) List() (*volume.ListResponse, error) {
 func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	v, exists := l.volumes[req.Name]
-	if !exists {
-		return &volume.GetResponse{}, fmt.Errorf("No such volume")
-	}
 
 	vgName, err := getVolumegroupName(l.vgConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	createdAt, err := getVolumeCreationDateTime(vgName, v.Name)
+	v, exists := l.volumes[req.Name]
+	if !exists {
+		return &volume.GetResponse{}, fmt.Errorf("No such volume")
+	}
+
+	if v.VgName == "" {
+		v.VgName = vgName
+	}
+
+	createdAt, err := getVolumeCreationDateTime(v.VgName, v.Name)
 	if err != nil {
 		return nil, err
 	}
