@@ -5,12 +5,9 @@
 docker-lvm-plugin - Docker Volume Driver for lvm volumes
 
 # SYNOPSIS
-**docker volume create -d lvm**
-[**--opt size**]
-[**--opt thinpool**]
-[**--opt snapshot**]
-[**--opt keyfile**]
-[**--opt vg**]
+**docker-lvm-plugin**
+[**-debug**]
+[**-version**]
 
 # DESCRIPTION
 This plugin can be used to create lvm volumes of specified size,
@@ -55,16 +52,10 @@ NOTE: thinpools are special kind of logical volumes carved out of the volume gro
 Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg0`.
 
 # OPTIONS
-**--opt size**=*size*
-  Set the size of the volume.
-**--opt thinpool**=*thinpool name*
-  Create a thinly-provisioned lvm volume.
-**--opt snapshot**=*snapshot name*
-  Create a snapshot volume of an existing lvm volume.
-**--opt keyfile**=*keyfile name*
-  Create a LUKS encrypted lvm volume.
-**--opt vg**=*volume group name*
-  Create the volume in the specified volume group.
+**-debug**=*true*|*false*
+  Enable debug logging. Default is false.
+**-version**=*true*|*false*
+  Print version information and quit. Default is false.
 
 # EXAMPLES
 **Volume Creation**

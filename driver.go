@@ -254,7 +254,7 @@ func (l *lvmDriver) Remove(req *volume.RemoveRequest) error {
 	}
 	vol, exists := l.volumes[req.Name]
 	if !exists {
-		return fmt.Errorf("Error removing volume, missing description in lvmConfigVolumes.json")
+		return fmt.Errorf("Unknown volume %s", req.Name)
 	}
 	if vol.VgName == "" {
 		vol.VgName = vgName
