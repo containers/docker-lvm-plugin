@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/docker/go-plugins-helpers/volume"
+	units "github.com/docker/go-units"
 )
 
 type lvmDriver struct {
@@ -83,6 +84,16 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 	}
 	s, ok := req.Options["size"]
 	hasSize := ok && s != ""
+
+	if hasSize {
+		sizeInBytes, err := units.FromHumanSize(s)
+		if err != nil {
+			return err
+		}
+		if sizeInBytes < 16000000 {
+			return fmt.Errorf("Error creating LVM volume, minimum expected size is 16M")
+		}
+	}
 
 	if !hasSize && !isThinSnap {
 		return fmt.Errorf("Please specify a size with --opt size=")
