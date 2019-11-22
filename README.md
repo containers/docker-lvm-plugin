@@ -55,6 +55,15 @@ This will create a thinpool named `mythinpool` of size 10G under volume group `v
 NOTE: thinpools are special kind of logical volumes carved out of the volume group.
 Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg0`.
 
+6) The docker-lvm-plugin allows you to create volumes using an optional volume group, which you can pass using `--opt vg` in `docker volume create` command. However, this is **not recommended** and user (administrator) should stick to the default volume group specified in /etc/docker/docker-lvm-plugin config file.
+
+   If a user still chooses to create a volume using an optional volume group
+   e.g `--opt vg=vg1`, user **must** pass `--opt vg=vg1` when creating any derivative volumes
+   based off this original volume. E.g
+
+   * Any snapshot volumes which are created off a volume that was created using the optional volume group.
+   * Any thin volumes which are created off a thin pool that was created using an optional volume group.
+
 ## Volume Creation
 `docker volume create` command supports the creation of regular lvm volumes, thin volumes, snapshots of regular and thin volumes.
 
