@@ -1,5 +1,5 @@
-% DOCKER-LVM-PLUGIN(8) 
-% Shishir Mahajan 
+% DOCKER-LVM-PLUGIN(8)
+% Shishir Mahajan
 % FEBRUARY 2016
 # NAME
 docker-lvm-plugin - Docker Volume Driver for lvm volumes
@@ -11,35 +11,35 @@ docker-lvm-plugin - Docker Volume Driver for lvm volumes
 
 # DESCRIPTION
 This plugin can be used to create lvm volumes of specified size,
-which can then be bind mounted into the container using `docker run` 
-command. 
+which can then be bind mounted into the container using `docker run`
+command.
 
 # USAGE
-Start the docker daemon before starting the docker-lvm-plugin daemon. 
+Start the docker daemon before starting the docker-lvm-plugin daemon.
 You can start docker daemon using command:
 ```bash
-systemctl start docker 
+systemctl start docker
 ```
 Once docker daemon is up and running, you can start docker-lvm-plugin daemon
 using command:
 ```bash
 systemctl start docker-lvm-plugin
-``` 
+```
 docker-lvm-plugin daemon is on-demand socket activated. Running `docker volume ls` command
 will automatically start the daemon.
 
-Since logical volumes (lv's) are based on a volume group, it is the 
-responsibility of the user (administrator) to provide a volume group name. 
-You can choose an existing volume group name by listing volume groups on 
-your system using `vgs` command OR create a new volume group using `vgcreate` 
+Since logical volumes (lv's) are based on a volume group, it is the
+responsibility of the user (administrator) to provide a volume group name.
+You can choose an existing volume group name by listing volume groups on
+your system using `vgs` command OR create a new volume group using `vgcreate`
 command. e.g.
 ```bash
-vgcreate vg1 /dev/hda 
+vgcreate vg0 /dev/hda
 ```
-where /dev/hda is your partition or whole disk on which physical volumes 
+where /dev/hda is your partition or whole disk on which physical volumes
 were created.
 
-Add this volume group name in the config file. 
+Add this volume group name in the config file.
 ```bash
 /etc/docker/docker-lvm-plugin
 ```
@@ -47,9 +47,9 @@ The docker-lvm-plugin also supports the creation of thinly-provisioned volumes. 
 ```bash
 lvcreate -L 10G -T vg1/mythinpool
 ```
-This will create a thinpool named `mythinpool` of size 10G under volume group `vg1`.
+This will create a thinpool named `mythinpool` of size 10G under volume group `vg0`.
 NOTE: thinpools are special kind of logical volumes carved out of the volume group.
-Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg1`.
+Hence in the above example, to create the thinpool `mythinpool` you must have atleast 10G of freespace in volume group `vg0`.
 
 # OPTIONS
 **-debug**=*true*|*false*
@@ -62,7 +62,13 @@ Hence in the above example, to create the thinpool `mythinpool` you must have at
 ```bash
 docker volume create -d lvm --opt size=0.2G --name foobar
 ```
-This will create a lvm volume named foobar of size 208 MB (0.2 GB).
+This will create a lvm volume named foobar of size 208 MB (0.2 GB) in the
+volume group vg0.
+```bash
+$ docker volume create -d lvm --opt size=0.2G --opt vg=vg1 --name foobar
+```
+This will create a lvm volume named `foobar` of size 208 MB (0.2 GB) in the
+volume group vg1.
 ```bash
 docker volume create -d lvm --opt size=0.2G --opt thinpool=mythinpool --name thin_vol
 ```
