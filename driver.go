@@ -159,11 +159,15 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 			device = luksDevice(req.Name)
 		}
 
-		cmd = exec.Command("mkfs.xfs", device)
-		if out, err := cmd.CombinedOutput(); err != nil {
-			l.logger.Err(fmt.Sprintf("Create: mkfs.xfs error: %s output %s", err, string(out)))
-			return fmt.Errorf("Error partitioning volume")
+		fs, _ := req.Options["fs"]
+		if fs == "" {
+			fs = "xfs"
 		}
+		cmd = exec.Command(fmt.Sprintf("mkfs.%s", fs), device)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			l.logger.Err(fmt.Sprintf("Create: mkfs.%s error: %s output %s", fs, err, string(out)))
+			return fmt.Errorf("Error partitioning volume")
+		}		
 
 		if hasKeyFile {
 			if out, err := luksClose(req.Name); err != nil {
