@@ -89,7 +89,7 @@ run_test () {
 run_tests() {
   local srcdir=`dirname $0`
   if [ $# -gt 0 ]; then
-    local files=$@
+    local files="$@"
   else
     local files="$srcdir/[0-9][0-9][0-9]-test-*"
   fi

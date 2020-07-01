@@ -5,25 +5,25 @@ test_regular_volumes(){
   local testname=`basename "$0"`
   local errmsg="all snapshot destinations must be removed before removing the original volume"
 
-  docker volume create -d lvm --opt size=0.2G --name foobar 2>&1 >/dev/null
+  docker volume create -d lvm --opt size=0.2G --name foobar >/dev/null 2>&1
   if [ $? -ne 0 ]; then
     echo "ERROR: $testname: Error creating regular volume foobar."
     return $test_status
   fi
 
-  docker volume inspect foobar 2>&1 >/dev/null
+  docker volume inspect foobar >/dev/null 2>&1
   if [ $? -ne 0 ]; then
     echo "ERROR: $testname: Error inspecting volume foobar."
     return $test_status
   fi
 
-  docker volume create -d lvm --opt snapshot=foobar --opt size=100M --name foobar_snapshot 2>&1 >/dev/null
+  docker volume create -d lvm --opt snapshot=foobar --opt size=100M --name foobar_snapshot >/dev/null 2>&1
   if [ $? -ne 0 ]; then
     echo "ERROR: $testname: Error creating snapshot of volume foobar."
     return $test_status
   fi
 
-  docker volume inspect foobar_snapshot 2>&1 >/dev/null
+  docker volume inspect foobar_snapshot >/dev/null 2>&1
   if [ $? -ne 0 ]; then
     echo "ERROR: $testname: Error inspecting volume foobar_snapshot."
     return $test_status
@@ -41,13 +41,13 @@ test_regular_volumes(){
      return $test_status
   fi
 
-  docker volume rm foobar_snapshot 2>&1 >/dev/null
+  docker volume rm foobar_snapshot >/dev/null 2>&1
   if [ $? -ne 0 ]; then
     echo "ERROR: $testname: Error removing volume foobar_snapshot."
     return $test_status
   fi
 
-  docker volume rm foobar 2>&1 >/dev/null
+  docker volume rm foobar >/dev/null 2>&1
   if [ $? -ne 0 ]; then
     echo "ERROR: $testname: Error removing volume foobar."
     return $test_status
