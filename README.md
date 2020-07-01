@@ -152,6 +152,14 @@ $ docker run -it -v foobar:/home fedora /bin/bash
 ```
 This will bind mount the logical volume `foobar` into the home directory of the container.
 
+## Tests
+```
+sudo make test
+```
+**NOTE**: These are destructive tests and can leave the system in a changed state.<br/>
+It is highly recommended to run these tests either as part of a CI/CD system or on
+a immutable infrastructure e.g VMs.
+
 ## Currently supported environments.
 Fedora, RHEL, Centos, Ubuntu (>= 16.04)
 
