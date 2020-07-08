@@ -28,9 +28,11 @@ install:
 	install -D -m 755 $(BINARY) $(BINDIR)/$(BINARY)
 	install -D -m 644 docker-lvm-plugin.8 ${MANINSTALLDIR}/man8/docker-lvm-plugin.8
 
+.PHONY: test
+test:
+	./tests/run_tests.sh
+
 .PHONY: clean
 clean:
 	rm -f $(BINARY)
 	rm -f docker-lvm-plugin.8
-
-
