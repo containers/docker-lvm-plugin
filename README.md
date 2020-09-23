@@ -49,7 +49,7 @@ vgcreate vg0 /dev/hda
 
 5) The docker-lvm-plugin also supports the creation of thinly-provisioned volumes. To create a thinly-provisioned volume, a user (administrator) must first create a thin pool using the `lvcreate` command.
 ```bash
-lvcreate -L 10G -T vg1/mythinpool
+lvcreate -L 10G -T vg0/mythinpool
 ```
 This will create a thinpool named `mythinpool` of size 10G under volume group `vg0`.
 NOTE: thinpools are special kind of logical volumes carved out of the volume group.
