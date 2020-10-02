@@ -1,7 +1,10 @@
 # Installation Directories
 SYSCONFDIR ?=$(DESTDIR)/etc/docker
 SYSTEMDIR ?=$(DESTDIR)/usr/lib/systemd/system
-GOLANG ?= /usr/bin/go
+ifndef $(GOLANG)
+    GOLANG=$(shell which go)
+    export GOLANG
+endif
 BINARY ?= docker-lvm-plugin
 MANINSTALLDIR?= ${DESTDIR}/usr/share/man
 BINDIR ?=$(DESTDIR)/usr/libexec/docker
@@ -27,6 +30,10 @@ install:
 	install -D -m 644 systemd/docker-lvm-plugin.socket $(SYSTEMDIR)/docker-lvm-plugin.socket
 	install -D -m 755 $(BINARY) $(BINDIR)/$(BINARY)
 	install -D -m 644 docker-lvm-plugin.8 ${MANINSTALLDIR}/man8/docker-lvm-plugin.8
+
+.PHONY: circleci
+circleci:
+	./tests/setup_circleci.sh
 
 .PHONY: test
 test:
