@@ -107,7 +107,7 @@ func loadFromDisk(l *lvmDriver) error {
 func lvdisplayGrep(vgName, lvName, keyword string) (bool, string, error) {
 	outByttes, err := exec.Command("lvdisplay", fmt.Sprintf("/dev/%s/%s", vgName, lvName)).Output()
 	if err != nil {
-		return false, "", err
+		return false, "", fmt.Errorf("Error in lvdisplay. This usually happens if one of the underlying lvm volumes is missing or deleted: %v", err)
 	}
 	var result []string
 	outStr := strings.TrimSpace(string(outByttes[:]))
