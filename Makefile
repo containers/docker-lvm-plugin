@@ -10,6 +10,7 @@ MANINSTALLDIR?= ${DESTDIR}/usr/share/man
 BINDIR ?=$(DESTDIR)/usr/libexec/docker
 
 export GO15VENDOREXPERIMENT=1
+export GOOS=linux
 
 all: man lvm-plugin-build
 
