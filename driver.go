@@ -82,7 +82,7 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 			return fmt.Errorf("Please don't specify --opt keyfile= for snapshots")
 		}
 		if isThinSnap, _, err = isThinlyProvisioned(vgName, snap); err != nil {
-			l.logger.Err(fmt.Sprintf("Create: lvdisplayGrep error: %s", err))
+			l.logger.Err(fmt.Sprintf("Create: lvdisplayGrep error: %v", err))
 			return fmt.Errorf("Error creating volume")
 		}
 	}
@@ -237,6 +237,7 @@ func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 
 	createdAt, err := getVolumeCreationDateTime(v.VgName, v.Name)
 	if err != nil {
+		l.logger.Err(fmt.Sprintf("Get: %v", err))
 		return nil, err
 	}
 
