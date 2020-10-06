@@ -9,7 +9,10 @@ This plugin can be used to create lvm volumes of specified size, which can
 then be bind mounted into the container using `docker run` command.
 
 ## Setup
+### Using Docker
+    docker plugin install --alias lvm containers/docker-lvm-plugin/docker-lvm-plugin VOLUME_GROUP=vg0
 
+### Manual
     1) git clone git@github.com:projectatomic/docker-lvm-plugin.git (You can also use HTTPS to clone: git clone https://github.com/projectatomic/docker-lvm-plugin.git)
     2) cd docker-lvm-plugin
     3) export GO111MODULE=on
