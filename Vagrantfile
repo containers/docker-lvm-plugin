@@ -4,12 +4,12 @@ VAGRANTFILE_API_VERSION = "2"
 
 # Create box
 Vagrant.configure("2") do |config|
-  config.vm.define "docker-lvm-plugin-fedora32"
-  config.vm.box = "generic/fedora32"
+  config.vm.define "docker-lvm-plugin-fedora33"
+  config.vm.box = "generic/fedora33"
   config.vm.synced_folder ".", "/home/vagrant/go/src/github.com/docker-lvm-plugin"
   config.ssh.extra_args = ["-t", "cd /home/vagrant/go/src/github.com/docker-lvm-plugin; bash --login"]
   config.vm.provider "virtualbox" do |vb|
-     vb.name = "docker-lvm-plugin-fedora32"
+     vb.name = "docker-lvm-plugin-fedora33"
      vb.cpus = 2
      vb.memory = 2048
   end

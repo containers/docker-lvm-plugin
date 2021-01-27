@@ -24,7 +24,7 @@ From the `$root` directory of the project.
 $ vagrant up
 ```
 
-Once the VM is up and running (`vagrant global-status` will list you all the vagrant VMs running on your system), you can `ssh` into the VM by running `vagrant ssh docker-lvm-plugin-fedora32`.
+Once the VM is up and running (`vagrant global-status` will list you all the vagrant VMs running on your system), you can `ssh` into the VM by running `vagrant ssh docker-lvm-plugin-fedora33`.
 
 ## Screencast
 [![asciicast](https://asciinema.org/a/248482.svg)](https://asciinema.org/a/248482)
