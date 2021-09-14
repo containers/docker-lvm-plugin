@@ -1,4 +1,4 @@
-name: Go
+name: docker-lvm-plugin-CI
 
 on:
   push:
@@ -7,19 +7,20 @@ on:
     branches: [ main ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
         go-version: 1.17
+    - name: Run docker-lvm-plugin integration tests
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y make xfsprogs lvm2 go-md2man thin-provisioning-tools
+        make
+        sudo make install
+        sudo systemctl start docker-lvm-plugin
+        sudo make test
 
-    - name: Build
-      run: go build -v ./...
-
-    - name: Test
-      run: go test -v ./...

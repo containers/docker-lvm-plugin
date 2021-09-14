@@ -1,5 +1,5 @@
 # docker lvm plugin
-[![CircleCI](https://circleci.com/gh/containers/docker-lvm-plugin/tree/master.svg?style=shield&circle-token=af715d8feae4c98aa240cfae4985a2bb0ee017bb)](https://circleci.com/gh/containers/docker-lvm-plugin/tree/master)
+[![CI Actions Status](https://github.com/containers/docker-lvm-plugin/workflows/CI/badge.svg)](https://github.com/containers/docker-lvm-plugin/actions)
 [![License: GNU LGPL v3.0](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/containers/docker-lvm-plugin/blob/master/LICENSE)
 [![Release](https://img.shields.io/badge/version-1.0-blue)](https://github.com/containers/docker-lvm-plugin/releases/tag/v1.0)
 
