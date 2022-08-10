@@ -1,0 +1,4 @@
+*
+!/plugin/
+!/etc/docker/docker-lvm-plugin
+!/docker-lvm-plugin

@@ -24,4 +24,5 @@ _testmain.go
 *.prof
 
 .vagrant/
+plugin/rootfs
 docker-lvm-plugin
