@@ -4,4 +4,4 @@
 # OR create a new volume group using `vgcreate` command. 
 # e.g. vgcreate volume_group_one /dev/hda where /dev/hda is your partition or
 # whole disk on which physical volumes were created.
-VOLUME_GROUP=
+VOLUME_GROUP=foo

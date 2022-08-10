@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log/syslog"
+	"log"
 	"os"
 	"os/exec"
 	"sync"
@@ -19,7 +19,7 @@ type lvmDriver struct {
 	volumes  map[string]*vol
 	count    map[string]int
 	mu       sync.RWMutex
-	logger   *syslog.Writer
+	logger   *log.Logger
 }
 
 type vol struct {
@@ -32,10 +32,10 @@ type vol struct {
 }
 
 func newDriver(home, vgConfig string) (*lvmDriver, error) {
-	logger, err := syslog.New(syslog.LOG_ERR, "docker-lvm-plugin")
-	if err != nil {
-		return nil, err
-	}
+	logger := log.New(os.Stdout, "docker-lvm-plugin", 1)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return &lvmDriver{
 		home:     home,
@@ -82,7 +82,7 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 			return fmt.Errorf("Please don't specify --opt keyfile= for snapshots")
 		}
 		if isThinSnap, _, err = isThinlyProvisioned(vgName, snap); err != nil {
-			l.logger.Err(fmt.Sprintf("Create: lvdisplayGrep error: %v", err))
+			l.logger.Print(fmt.Sprintf("Create: lvdisplayGrep error: %v", err))
 			return fmt.Errorf("Error creating volume")
 		}
 	}
@@ -123,7 +123,7 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 	}
 	cmd := exec.Command("lvcreate", cmdArgs...)
 	if out, err := cmd.CombinedOutput(); err != nil {
-		l.logger.Err(fmt.Sprintf("Create: lvcreate error: %s output %s", err, string(out)))
+		l.logger.Print(fmt.Sprintf("Create: lvcreate error: %s output %s", err, string(out)))
 		return fmt.Errorf("Error creating volume")
 	}
 
@@ -139,19 +139,19 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 		if hasKeyFile {
 			cmd = exec.Command("cryptsetup", "-q", "-d", keyFile, "luksFormat", device)
 			if out, err := cmd.CombinedOutput(); err != nil {
-				l.logger.Err(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
+				l.logger.Print(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
 				return fmt.Errorf("Error encrypting volume")
 			}
 
 			if out, err := luksOpen(vgName, req.Name, keyFile); err != nil {
-				l.logger.Err(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
+				l.logger.Print(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
 				return fmt.Errorf("Error opening encrypted volume")
 			}
 
 			defer func() {
 				if err != nil {
 					if out, err := luksClose(req.Name); err != nil {
-						l.logger.Err(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
+						l.logger.Print(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
 					}
 				}
 			}()
@@ -161,13 +161,13 @@ func (l *lvmDriver) Create(req *volume.CreateRequest) error {
 
 		cmd = exec.Command("mkfs.xfs", device)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			l.logger.Err(fmt.Sprintf("Create: mkfs.xfs error: %s output %s", err, string(out)))
+			l.logger.Print(fmt.Sprintf("Create: mkfs.xfs error: %s output %s", err, string(out)))
 			return fmt.Errorf("Error partitioning volume")
 		}
 
 		if hasKeyFile {
 			if out, err := luksClose(req.Name); err != nil {
-				l.logger.Err(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
+				l.logger.Print(fmt.Sprintf("Create: cryptsetup error: %s output %s", err, string(out)))
 				return fmt.Errorf("Error closing encrypted volume")
 			}
 		}
@@ -237,7 +237,7 @@ func (l *lvmDriver) Get(req *volume.GetRequest) (*volume.GetResponse, error) {
 
 	createdAt, err := getVolumeCreationDateTime(v.VgName, v.Name)
 	if err != nil {
-		l.logger.Err(fmt.Sprintf("Get: %v", err))
+		l.logger.Print(fmt.Sprintf("Get: %v", err))
 		return nil, err
 	}
 
@@ -287,7 +287,7 @@ func (l *lvmDriver) Remove(req *volume.RemoveRequest) error {
 	}
 
 	if out, err := removeLogicalVolume(req.Name, vol.VgName); err != nil {
-		l.logger.Err(fmt.Sprintf("Remove: removeLogicalVolume error %s output %s", err, string(out)))
+		l.logger.Print(fmt.Sprintf("Remove: removeLogicalVolume error %s output %s", err, string(out)))
 		return fmt.Errorf("error removing volume")
 	}
 
@@ -334,21 +334,21 @@ func (l *lvmDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, erro
 
 		if keyFile != "" {
 			if err := keyFileExists(keyFile); err != nil {
-				l.logger.Err(fmt.Sprintf("Mount: %s", err))
+				l.logger.Print(fmt.Sprintf("Mount: %s", err))
 				return &volume.MountResponse{}, err
 			}
 			if err := cryptsetupInstalled(); err != nil {
-				l.logger.Err(fmt.Sprintf("Mount: %s", err))
+				l.logger.Print(fmt.Sprintf("Mount: %s", err))
 				return &volume.MountResponse{}, err
 			}
 			if out, err := luksOpen(vol.VgName, req.Name, keyFile); err != nil {
-				l.logger.Err(fmt.Sprintf("Mount: cryptsetup error: %s output %s", err, string(out)))
+				l.logger.Print(fmt.Sprintf("Mount: cryptsetup error: %s output %s", err, string(out)))
 				return &volume.MountResponse{}, fmt.Errorf("Error opening encrypted volume")
 			}
 			defer func() {
 				if err != nil {
 					if out, err := luksClose(req.Name); err != nil {
-						l.logger.Err(fmt.Sprintf("Mount: cryptsetup error: %s output %s", err, string(out)))
+						l.logger.Print(fmt.Sprintf("Mount: cryptsetup error: %s output %s", err, string(out)))
 					}
 				}
 			}()
@@ -361,7 +361,7 @@ func (l *lvmDriver) Mount(req *volume.MountRequest) (*volume.MountResponse, erro
 		}
 		cmd := exec.Command("mount", mountArgs...)
 		if out, err := cmd.CombinedOutput(); err != nil {
-			l.logger.Err(fmt.Sprintf("Mount: mount error: %s output %s", err, string(out)))
+			l.logger.Print(fmt.Sprintf("Mount: mount error: %s output %s", err, string(out)))
 			return &volume.MountResponse{}, fmt.Errorf("Error mouting volume")
 		}
 	}
@@ -379,22 +379,22 @@ func (l *lvmDriver) Unmount(req *volume.UnmountRequest) error {
 		mp := getMountpoint(l.home, req.Name)
 		isVolMounted, err := mount.Mounted(mp)
 		if err != nil {
-			l.logger.Err(fmt.Sprintf("Unmount: %s", err))
+			l.logger.Print(fmt.Sprintf("Unmount: %s", err))
 			return fmt.Errorf("error unmounting volume")
 		}
 		if isVolMounted {
 			cmd := exec.Command("umount", mp)
 			if out, err := cmd.CombinedOutput(); err != nil {
-				l.logger.Err(fmt.Sprintf("Unmount: unmount error: %s output %s", err, string(out)))
+				l.logger.Print(fmt.Sprintf("Unmount: unmount error: %s output %s", err, string(out)))
 				return fmt.Errorf("error unmounting volume")
 			}
 			if v, ok := l.volumes[req.Name]; ok && v.KeyFile != "" {
 				if err := cryptsetupInstalled(); err != nil {
-					l.logger.Err(fmt.Sprintf("Unmount: %s", err))
+					l.logger.Print(fmt.Sprintf("Unmount: %s", err))
 					return err
 				}
 				if out, err := luksClose(req.Name); err != nil {
-					l.logger.Err(fmt.Sprintf("Unmount: cryptsetup error: %s output %s", err, string(out)))
+					l.logger.Print(fmt.Sprintf("Unmount: cryptsetup error: %s output %s", err, string(out)))
 					return fmt.Errorf("Error closing encrypted volume")
 				}
 			}
