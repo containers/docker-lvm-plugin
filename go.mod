@@ -1,4 +1,4 @@
-module github.com/docker-lvm-plugin
+module github.com/nupplaphil/docker-lvm-plugin
 
 go 1.12
 
